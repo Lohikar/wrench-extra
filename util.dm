@@ -318,9 +318,11 @@ var/list/reverse_dir = list( // reverse_dir[dir] = reverse of dir
 /proc/__sleep(x)
 	sleep(x)
 
-#define __WRENCH_INTERNAL_BENCHLOOP for (__sleep(1) || (_count = 0) || (_start = world.tick_usage); world.tick_usage - _start < 100; ++_count)
+#define __WRENCH_INTERNAL_BENCHLOOP(INCR) for (__sleep(1) || (_count = 0) || (_start = world.tick_usage); world.tick_usage - _start < 100; INCR)
 
-#define BENCH_BLOCK(NAME) for (var/_active_phase = (_identifiers[_current_phase] = NAME) && _current_phase; _current_phase == _active_phase; (_current_phase = ++_current_phase > _phases.len ? 1 : _current_phase) && (_phases[_active_phase][_samp] = _count)) __WRENCH_INTERNAL_BENCHLOOP
+#define BENCH_BLOCK(NAME) for (var/_active_phase = (_identifiers[_current_phase] = NAME) && _current_phase; _current_phase == _active_phase; (_current_phase = ++_current_phase > _phases.len ? 1 : _current_phase) && (_phases[_active_phase][_samp] = _count)) __WRENCH_INTERNAL_BENCHLOOP(++_count)
+
+#define BENCH_BLOCK_CHUNKED(NAME, CHUNK_SIZE) for (var/_active_phase = (_identifiers[_current_phase] = NAME) && _current_phase; _current_phase == _active_phase; (_current_phase = ++_current_phase > _phases.len ? 1 : _current_phase) && (_phases[_active_phase][_samp] = _count)) __WRENCH_INTERNAL_BENCHLOOP(_count += CHUNK_SIZE) for (var/_ctr in 1 to CHUNK_SIZE)
 
 #define BENCH_EXPR(NAME,CODE) BENCH_PHASE(NAME,CODE)
 
