@@ -318,7 +318,19 @@ var/list/reverse_dir = list( // reverse_dir[dir] = reverse of dir
 /proc/__sleep(x)
 	sleep(x)
 
-#define __WRENCH_INTERNAL_BENCHLOOP(INCR) for (__sleep(1) || (_count = 0) || (_start = world.tick_usage); world.tick_usage - _start < 100; INCR)
+/*
+	This set of macros is abusing for() to run code after their associated block; OVERRUN_LOOP and the active phase loop execute only once.
+	The resulting structure ends up being:
+
+		for (<Setup oneshot>) for (<Overrun oneshot>) for (<Tick usage>) for (<Chunking>)
+			user code
+
+	Non-CHUNKED loops omit the chunking loop.
+*/
+
+#define __WRENCH_INTERNAL_OVERRUN_LOOP for (var/_oneshot = 1; _oneshot || (((world.tick_usage > 110) ? (_overruns[_current_phase] = _overruns[_current_phase] + 1) : 0) && 0); _oneshot = 0)
+
+#define __WRENCH_INTERNAL_BENCHLOOP(INCR) __WRENCH_INTERNAL_OVERRUN_LOOP for (__sleep(1) || (_count = 0) || (_start = world.tick_usage); world.tick_usage - _start < 100; INCR)
 
 #define BENCH_BLOCK(NAME) for (var/_active_phase = (_identifiers[_current_phase] = NAME) && _current_phase; _current_phase == _active_phase; (_current_phase = ++_current_phase > _phases.len ? 1 : _current_phase) && (_phases[_active_phase][_samp] = _count)) __WRENCH_INTERNAL_BENCHLOOP(++_count)
 
